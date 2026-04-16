@@ -1,0 +1,248 @@
+.page {
+  min-height: calc(100vh - 150px);
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 18px;
+  padding: 12px 6px 18px;
+}
+
+.sidebar {
+  padding: 22px 18px;
+  border-radius: 28px;
+  background: rgba(7, 29, 39, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+}
+
+.sidebarHeader h3 {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+}
+
+.sidebarHeader p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.sidebarBadge {
+  display: inline-flex;
+  margin-bottom: 12px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+.modeList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modeButton {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #ffffff;
+  text-align: left;
+  transition: 0.22s ease;
+}
+
+.modeButton:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.modeButtonActive {
+  border-color: rgba(130, 255, 210, 0.32);
+  background: rgba(130, 255, 210, 0.12);
+}
+
+.modeDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-top: 4px;
+  background: linear-gradient(135deg, #ffffff 0%, #90ffe0 100%);
+  box-shadow: 0 0 16px rgba(144, 255, 224, 0.4);
+  flex-shrink: 0;
+}
+
+.modeText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modeText strong {
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
+.modeText small {
+  color: var(--text-soft);
+  line-height: 1.45;
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.primaryButton,
+.secondaryButton {
+  border: none;
+  padding: 13px 16px;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+.primaryButton {
+  color: #07212d;
+  background: linear-gradient(135deg, #ecfff9 0%, #c2ffea 100%);
+}
+
+.secondaryButton {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.main {
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.topRow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.areaTag {
+  align-self: flex-start;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(130, 255, 210, 0.12);
+  border: 1px solid rgba(130, 255, 210, 0.24);
+  color: #ddfff5;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.userBubble {
+  width: min(520px, 100%);
+  padding: 16px 18px;
+  border-radius: 22px 22px 8px 22px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+}
+
+.userBubble span {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #d4ecef;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.userBubble p {
+  margin: 0;
+  color: #ffffff;
+  line-height: 1.6;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cardTag {
+  align-self: flex-start;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(8, 29, 40, 0.52);
+  color: #d8f2f2;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.card h4 {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.4;
+}
+
+.card p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.65;
+}
+
+.questionBox {
+  margin-top: auto;
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(4, 27, 36, 0.72);
+  color: #e8fbfb;
+  border: 1px solid rgba(125, 220, 225, 0.16);
+  font-weight: 500;
+}
+
+@media (max-width: 1080px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    order: 2;
+  }
+
+  .main {
+    order: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .page {
+    padding: 4px 0 14px;
+  }
+
+  .sidebar,
+  .card,
+  .userBubble {
+    border-radius: 20px;
+  }
+}
