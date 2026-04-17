@@ -40,7 +40,7 @@ function LoginPage({ onLogin }) {
 
       <section className={styles.loginShell}>
         <div className={styles.leftPanel}>
-          <span className={styles.badge}>NCI Platform</span>
+          <span className={styles.badge}>PetroAlly</span>
 
           <h1 className={styles.title}>Acesse a plataforma</h1>
 

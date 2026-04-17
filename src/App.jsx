@@ -282,7 +282,7 @@ function App() {
             <header className={styles.topbar}>
               <div className={styles.brand}>
                 <div className={styles.brandDot} />
-                <span>NCI Project Flow</span>
+                <span>PetroAlly</span>
               </div>
 
               <div className={styles.progress}>

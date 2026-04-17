@@ -6,7 +6,7 @@ function WelcomePage({ onStart }) {
       <div className={styles.content}>
         <span className={styles.badge}>Assistente de projetos</span>
 
-        <h1 className={styles.title}>Bem-vindo à NCI</h1>
+        <h1 className={styles.title}>Bem-vindo à PetroAlly</h1>
 
         <p className={styles.subtitle}>
           Estou aqui para te ajudar a estruturar ideias, analisar projetos e
