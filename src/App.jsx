@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./App.module.css";
 
 import LoginPage from "./pages/LoginPage/LoginPage";
 import WelcomePage from "./pages/WelcomePage/WelcomePage";
 import AreasPage from "./pages/AreasPage/AreasPage";
 import ProjectPage from "./pages/ProjectPage/ProjectPage";
+import IdeasSidebar from "./components/IdeasSidebar/IdeasSidebar";
+
+const IDEAS_STORAGE_KEY = "nci_saved_ideas_v1";
 
 const AREAS = [
   {
@@ -53,292 +56,96 @@ const AREAS = [
 
 const STEPS = ["Início", "Área", "Projeto"];
 
-function includesAny(text, keywords) {
-  return keywords.some((keyword) => text.includes(keyword));
+function loadIdeasFromStorage() {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.localStorage.getItem(IDEAS_STORAGE_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
-function uniqueLimited(items, limit = 4) {
-  return [...new Set(items)].slice(0, limit);
+function saveIdeasToStorage(ideas) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(IDEAS_STORAGE_KEY, JSON.stringify(ideas));
+  } catch {
+    // ignora erro de storage
+  }
 }
 
-function buildProjectReview(areaTitle, description) {
-  const text = description.trim();
-
-  if (!text) {
-    return {
-      score: 0,
-      maturity: "Preencha a descrição para gerar a leitura inicial.",
-      highlights: [],
-      attentionPoints: [],
-      aiResponse:
-        "Quando você descrever a ideia e clicar em “Gerar leitura inicial”, esta área poderá mostrar a resposta da IA local.",
-    };
+function createIdeaId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
   }
 
-  const normalized = text.toLowerCase();
-  let score = 42;
-  const highlights = [];
-  const attentionPoints = [];
+  return `idea-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+}
 
-  if (text.length >= 80) score += 10;
-  if (text.length >= 140) score += 10;
-  if (text.length >= 220) score += 8;
+function buildIdeaTitle(projectTitle, description) {
+  const manualTitle = (projectTitle || "").trim();
+  if (manualTitle) return manualTitle;
 
-  if (
-    includesAny(normalized, [
-      "problema",
-      "dor",
-      "desafio",
-      "dificuldade",
-      "gargalo",
-    ])
-  ) {
-    score += 6;
-    highlights.push("A descrição deixa claro qual problema precisa ser resolvido.");
-  }
+  const normalizedDescription = (description || "").trim();
+  if (!normalizedDescription) return "Nova ideia";
 
-  if (
-    includesAny(normalized, [
-      "dados",
-      "indicador",
-      "indicadores",
-      "dashboard",
-      "monitoramento",
-      "métrica",
-      "metricas",
-      "métricas",
-    ])
-  ) {
-    score += 7;
-    highlights.push("A ideia considera dados e indicadores para apoiar decisões.");
-  }
+  const firstLine = normalizedDescription
+    .split(/\r?\n/)
+    .find((line) => line.trim());
 
-  if (
-    includesAny(normalized, [
-      "api",
-      "integração",
-      "integracao",
-      "sistema",
-      "erp",
-      "plataforma",
-      "banco",
-    ])
-  ) {
-    score += 6;
-    highlights.push("Existe visão de integração com sistemas ou fontes técnicas.");
-  }
+  if (!firstLine) return "Nova ideia";
 
-  if (
-    includesAny(normalized, [
-      "custo",
-      "economia",
-      "redução",
-      "reducao",
-      "retorno",
-      "roi",
-      "orçamento",
-      "orcamento",
-    ])
-  ) {
-    score += 6;
-    highlights.push("A proposta já aponta impacto financeiro ou redução de custo.");
-  }
+  return firstLine.length > 42
+    ? `${firstLine.slice(0, 42).trim()}...`
+    : firstLine;
+}
 
-  if (
-    includesAny(normalized, [
-      "segurança",
-      "seguranca",
-      "risco",
-      "confiabilidade",
-      "falha",
-      "falhas",
-    ])
-  ) {
-    score += 5;
-    highlights.push("A ideia considera risco, segurança ou confiabilidade operacional.");
-  }
-
-  if (
-    includesAny(normalized, [
-      "eficiência",
-      "eficiencia",
-      "produtividade",
-      "otimização",
-      "otimizacao",
-      "agilidade",
-      "automat",
-    ])
-  ) {
-    score += 6;
-    highlights.push("Há foco em eficiência, agilidade ou automação do processo.");
-  }
-
-  if (
-    includesAny(normalized, [
-      "usuário",
-      "usuario",
-      "equipe",
-      "operador",
-      "colaborador",
-      "cliente",
-    ])
-  ) {
-    score += 4;
-    highlights.push("O texto considera quem vai usar ou ser impactado pela solução.");
-  }
-
-  if (
-    includesAny(normalized, [
-      "piloto",
-      "mvp",
-      "teste",
-      "validar",
-      "validação",
-      "validacao",
-      "poc",
-    ])
-  ) {
-    score += 5;
-    highlights.push("Existe abertura para validar a ideia em piloto ou MVP.");
-  }
-
-  score = Math.min(97, score);
-
-  if (
-    !includesAny(normalized, [
-      "dados",
-      "indicador",
-      "indicadores",
-      "dashboard",
-      "monitoramento",
-      "métrica",
-      "metricas",
-      "métricas",
-    ])
-  ) {
-    attentionPoints.push(
-      "Definir quais dados, indicadores ou evidências vão sustentar a solução."
-    );
-  }
-
-  if (
-    !includesAny(normalized, [
-      "usuário",
-      "usuario",
-      "equipe",
-      "operador",
-      "colaborador",
-      "cliente",
-    ])
-  ) {
-    attentionPoints.push(
-      "Especificar melhor quem será o usuário principal e como acontecerá a adoção."
-    );
-  }
-
-  if (
-    !includesAny(normalized, [
-      "api",
-      "integração",
-      "integracao",
-      "sistema",
-      "erp",
-      "plataforma",
-      "banco",
-    ])
-  ) {
-    attentionPoints.push(
-      "Mapear integrações, origem das informações e dependências técnicas."
-    );
-  }
-
-  if (
-    !includesAny(normalized, [
-      "piloto",
-      "mvp",
-      "teste",
-      "validar",
-      "validação",
-      "validacao",
-      "poc",
-    ])
-  ) {
-    attentionPoints.push(
-      "Planejar um piloto curto para validar a proposta antes de ampliar o escopo."
-    );
-  }
-
-  if (
-    !includesAny(normalized, [
-      "custo",
-      "economia",
-      "redução",
-      "reducao",
-      "retorno",
-      "roi",
-      "orçamento",
-      "orcamento",
-    ])
-  ) {
-    attentionPoints.push(
-      "Traduzir a ideia em ganho financeiro, economia ou produtividade mensurável."
-    );
-  }
-
-  const finalHighlights = uniqueLimited(
-    highlights.length > 0
-      ? highlights
-      : [
-          `A proposta está alinhada à área de ${areaTitle}.`,
-          "A ideia já permite uma leitura inicial do objetivo.",
-          "Há potencial para evoluir isso para um MVP.",
-        ],
-    4
-  );
-
-  const finalAttentionPoints = uniqueLimited(
-    attentionPoints.length > 0
-      ? attentionPoints
-      : [
-          "Definir um escopo inicial enxuto.",
-          "Estabelecer critérios de sucesso para a primeira versão.",
-          "Planejar a validação com usuários ou operação.",
-        ],
-    4
-  );
-
-  let maturity = "Ideia promissora, mas ainda pede mais detalhamento.";
-  if (score >= 70) {
-    maturity = "Boa base para evoluir com escopo, validação e indicadores.";
-  }
-  if (score >= 85) {
-    maturity = "Ideia bem encaminhada para virar proposta ou MVP.";
-  }
-
-  const aiResponse = `Leitura inicial simulada: a proposta para ${areaTitle} mostra potencial e já apresenta um bom direcionamento. O score atual é ${score}/100, indicando que a ideia está em um nível ${score >= 85 ? "forte" : score >= 70 ? "intermediário" : "inicial"} de maturidade. Os pontos mais consistentes estão ligados a ${finalHighlights
-    .slice(0, 2)
-    .map((item) => item.toLowerCase())
-    .join(" e ")}. Antes da implementação, eu priorizaria ${finalAttentionPoints[0].toLowerCase()} Depois, recomendaria estruturar um piloto simples, com objetivo claro, métrica de sucesso e retorno esperado. Este bloco já está pronto para você substituir pela resposta real da sua IA local quando integrar o modelo ao projeto.`;
-
-  return {
-    score,
-    maturity,
-    highlights: finalHighlights,
-    attentionPoints: finalAttentionPoints,
-    aiResponse,
-  };
+function sortIdeasByRecency(ideas) {
+  return [...ideas].sort((a, b) => {
+    const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
+    const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
+    return bTime - aTime;
+  });
 }
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState("Usuário");
+
   const [step, setStep] = useState(0);
   const [selectedArea, setSelectedArea] = useState(AREAS[0]);
+  const [projectTitle, setProjectTitle] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
+  const [analysisData, setAnalysisData] = useState(null);
 
-  const analysis = useMemo(() => {
-    return buildProjectReview(selectedArea?.title || "sua área", projectDescription);
-  }, [selectedArea, projectDescription]);
+  const [ideasHistory, setIdeasHistory] = useState(() =>
+    sortIdeasByRecency(loadIdeasFromStorage())
+  );
+  const [activeIdeaId, setActiveIdeaId] = useState(null);
+
+  useEffect(() => {
+    saveIdeasToStorage(ideasHistory);
+  }, [ideasHistory]);
+
+  const topIdeas = useMemo(() => {
+    return [...ideasHistory]
+      .filter((item) => Number.isFinite(Number(item.score)))
+      .sort((a, b) => {
+        const scoreDiff = Number(b.score || 0) - Number(a.score || 0);
+        if (scoreDiff !== 0) return scoreDiff;
+
+        const aTime = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        const bTime = new Date(b.updatedAt || b.createdAt || 0).getTime();
+        return bTime - aTime;
+      })
+      .slice(0, 3);
+  }, [ideasHistory]);
 
   function handleFakeLogin({ email }) {
     const baseName = email.split("@")[0]?.trim();
@@ -352,6 +159,100 @@ function App() {
     setIsAuthenticated(true);
   }
 
+  function handleSelectArea(area) {
+    setSelectedArea(area);
+    setAnalysisData(null);
+  }
+
+  function handleChangeTitle(value) {
+    setProjectTitle(value);
+    setAnalysisData(null);
+  }
+
+  function handleChangeDescription(value) {
+    setProjectDescription(value);
+    setAnalysisData(null);
+  }
+
+  function handleAnalysisReady(result) {
+    const normalizedTitle = buildIdeaTitle(projectTitle, projectDescription);
+    const ideaId = activeIdeaId || createIdeaId();
+    const now = new Date().toISOString();
+
+    setProjectTitle(normalizedTitle);
+    setAnalysisData(result);
+    setActiveIdeaId(ideaId);
+
+    setIdeasHistory((prev) => {
+      const existing = prev.find((item) => item.id === ideaId);
+
+      const nextIdea = {
+        id: ideaId,
+        title: normalizedTitle,
+        description: projectDescription.trim(),
+        areaId: selectedArea?.id || AREAS[0].id,
+        areaTitle: selectedArea?.title || "Área não informada",
+        score: Number(result?.score || 0),
+        maturity: result?.maturity || "",
+        analysisData: result,
+        createdAt: existing?.createdAt || now,
+        updatedAt: now,
+      };
+
+      const nextIdeas = existing
+        ? prev.map((item) => (item.id === ideaId ? nextIdea : item))
+        : [nextIdea, ...prev];
+
+      return sortIdeasByRecency(nextIdeas);
+    });
+  }
+
+  function handleOpenIdea(ideaId) {
+    const idea = ideasHistory.find((item) => item.id === ideaId);
+    if (!idea) return;
+
+    const matchedArea =
+      AREAS.find((area) => area.id === idea.areaId) || AREAS[0];
+
+    setActiveIdeaId(idea.id);
+    setSelectedArea(matchedArea);
+    setProjectTitle(idea.title || "");
+    setProjectDescription(idea.description || "");
+    setAnalysisData(idea.analysisData || null);
+    setStep(2);
+  }
+
+  function handleCreateNewIdea() {
+    setActiveIdeaId(null);
+    setSelectedArea(AREAS[0]);
+    setProjectTitle("");
+    setProjectDescription("");
+    setAnalysisData(null);
+    setStep(1);
+  }
+
+  function handleDeleteIdea(ideaId) {
+    setIdeasHistory((prev) => prev.filter((item) => item.id !== ideaId));
+
+    if (activeIdeaId === ideaId) {
+      setActiveIdeaId(null);
+      setProjectTitle("");
+      setProjectDescription("");
+      setAnalysisData(null);
+      setSelectedArea(AREAS[0]);
+      setStep(1);
+    }
+  }
+
+  function handleRestart() {
+    setActiveIdeaId(null);
+    setSelectedArea(AREAS[0]);
+    setProjectTitle("");
+    setProjectDescription("");
+    setAnalysisData(null);
+    setStep(0);
+  }
+
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleFakeLogin} />;
   }
@@ -359,55 +260,76 @@ function App() {
   return (
     <div className={styles.app}>
       <div className={styles.noise} />
-      <div className={styles.frame}>
-        <div className={styles.glowTop} />
-        <div className={styles.glowBottom} />
 
-        <header className={styles.topbar}>
-          <div className={styles.brand}>
-            <div className={styles.brandDot} />
-            <span>NCI Project Flow</span>
-          </div>
+      <div className={styles.layout}>
+        <aside className={styles.sidebarColumn}>
+          <IdeasSidebar
+            userName={userName}
+            ideas={ideasHistory}
+            topIdeas={topIdeas}
+            activeIdeaId={activeIdeaId}
+            onNewIdea={handleCreateNewIdea}
+            onOpenIdea={handleOpenIdea}
+            onDeleteIdea={handleDeleteIdea}
+          />
+        </aside>
 
-          <div className={styles.progress}>
-            {STEPS.map((item, index) => (
-              <div
-                key={item}
-                className={`${styles.progressItem} ${
-                  index <= step ? styles.progressItemActive : ""
-                }`}
-              >
-                {item}
+        <div className={styles.mainColumn}>
+          <div className={styles.frame}>
+            <div className={styles.glowTop} />
+            <div className={styles.glowBottom} />
+
+            <header className={styles.topbar}>
+              <div className={styles.brand}>
+                <div className={styles.brandDot} />
+                <span>NCI Project Flow</span>
               </div>
-            ))}
+
+              <div className={styles.progress}>
+                {STEPS.map((item, index) => (
+                  <div
+                    key={item}
+                    className={`${styles.progressItem} ${
+                      index <= step ? styles.progressItemActive : ""
+                    }`}
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </header>
+
+            <main className={styles.content}>
+              {step === 0 && (
+                <WelcomePage onStart={() => setStep(1)} userName={userName} />
+              )}
+
+              {step === 1 && (
+                <AreasPage
+                  areas={AREAS}
+                  selectedArea={selectedArea}
+                  onSelectArea={handleSelectArea}
+                  onBack={() => setStep(0)}
+                  onContinue={() => setStep(2)}
+                />
+              )}
+
+              {step === 2 && (
+                <ProjectPage
+                  selectedArea={selectedArea}
+                  projectTitle={projectTitle}
+                  projectDescription={projectDescription}
+                  onChangeTitle={handleChangeTitle}
+                  onChangeDescription={handleChangeDescription}
+                  onBack={() => setStep(1)}
+                  analysis={analysisData}
+                  onAnalysisReady={handleAnalysisReady}
+                  onRestart={handleRestart}
+                />
+              )}
+            </main>
           </div>
-        </header>
-
-        <main className={styles.content}>
-          {step === 0 && (
-            <WelcomePage onStart={() => setStep(1)} userName={userName} />
-          )}
-
-          {step === 1 && (
-            <AreasPage
-              areas={AREAS}
-              selectedArea={selectedArea}
-              onSelectArea={setSelectedArea}
-              onBack={() => setStep(0)}
-              onContinue={() => setStep(2)}
-            />
-          )}
-
-          {step === 2 && (
-            <ProjectPage
-              selectedArea={selectedArea}
-              projectDescription={projectDescription}
-              onChangeDescription={setProjectDescription}
-              onBack={() => setStep(1)}
-              analysis={analysis}
-            />
-          )}
-        </main>
+        </div>
       </div>
     </div>
   );

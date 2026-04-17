@@ -70,37 +70,64 @@
   color: var(--text-muted);
 }
 
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.fieldLabel {
+  color: #e9f8f8;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.textInput,
 .textarea {
   width: 100%;
-  min-height: 250px;
-  resize: vertical;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 22px;
   padding: 18px;
   background: rgba(255, 255, 255, 0.07);
   color: #ffffff;
   outline: none;
-  line-height: 1.6;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
+.textInput::placeholder,
 .textarea::placeholder {
   color: #a9bcc3;
 }
 
+.textInput:focus,
 .textarea:focus {
   border-color: rgba(130, 255, 210, 0.42);
   background: rgba(255, 255, 255, 0.09);
   box-shadow: 0 0 0 4px rgba(130, 255, 210, 0.08);
 }
 
-.helperRow {
-  margin-top: 12px;
+.textInput {
+  min-height: 58px;
+}
+
+.textarea {
+  min-height: 250px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.helperRow,
+.counterRow {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   color: var(--text-muted);
   font-size: 0.9rem;
+}
+
+.counterRow {
+  margin-top: 8px;
 }
 
 .actions {
@@ -259,60 +286,30 @@
   line-height: 1.7;
 }
 
-.pointList li + li {
-  margin-top: 8px;
-}
-
 .responseBox {
-  border-radius: 18px;
-  padding: 16px;
-  background: rgba(4, 27, 36, 0.72);
-  border: 1px solid rgba(125, 220, 225, 0.16);
-  color: #e8fbfb;
-  line-height: 1.75;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  color: #f0fbfb;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1024px) {
   .shell {
     grid-template-columns: 1fr;
   }
-
-  .rightColumn {
-    padding: 18px;
-  }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .page {
-    padding: 10px;
-  }
-
-  .leftColumn,
-  .rightColumn {
-    border-radius: 22px;
+    padding: 14px 6px 18px;
   }
 
   .leftColumn {
-    padding: 22px 16px;
+    padding: 22px;
   }
 
+  .actions,
   .helperRow,
-  .actions {
+  .counterRow {
     flex-direction: column;
-  }
-
-  .primaryButton,
-  .secondaryButton {
-    width: 100%;
-  }
-
-  .rightColumn {
-    padding: 12px;
-  }
-
-  .scoreCard,
-  .sectionCard,
-  .emptyState {
-    border-radius: 18px;
   }
 }
