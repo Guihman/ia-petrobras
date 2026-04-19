@@ -133,6 +133,14 @@ function App() {
     saveIdeasToStorage(ideasHistory);
   }, [ideasHistory]);
 
+  useEffect(() => {
+    const savedName = localStorage.getItem("petroally_user");
+    if (savedName) {
+      setUserName(savedName);
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   const topIdeas = useMemo(() => {
     return [...ideasHistory]
       .filter((item) => Number.isFinite(Number(item.score)))
@@ -154,9 +162,10 @@ function App() {
       baseName && baseName.length > 0
         ? baseName.charAt(0).toUpperCase() + baseName.slice(1)
         : "Usuário";
-
+        
     setUserName(normalizedName);
     setIsAuthenticated(true);
+    localStorage.setItem("petroally_user", normalizedName);
   }
 
   function handleSelectArea(area) {

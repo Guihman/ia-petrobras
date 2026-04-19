@@ -20,6 +20,9 @@ function ProjectPage({
   const [errorMessage, setErrorMessage] = useState("");
   const [analysisData, setAnalysisData] = useState(null);
 
+  // 👇 1. ESTADO MOVIDO PARA O TOPO (Regra dos Hooks do React)
+  const [loadingMessage, setLoadingMessage] = useState("Iniciando motor LlamaCPP off-grid...");
+
   const isTitleValid = projectTitle.trim().length >= 3;
   const isDescriptionValid = projectDescription.trim().length >= 20;
   const isValid = isTitleValid && isDescriptionValid;
@@ -50,6 +53,33 @@ function ProjectPage({
     }
   }, [initialAnalysis, analysisData]);
 
+  // 👇 2. USE-EFFECT DO LOADER HACKER MANTIDO AQUI
+  useEffect(() => {
+    let interval;
+    if (loading) {
+      const steps = [
+        "Iniciando motor LlamaCPP off-grid...",
+        "Cruzando dados com o Plano Estratégico da Petrobras...",
+        "Analisando relatórios do MCTI e EPE...",
+        "Avaliando viabilidade técnica e riscos operacionais...",
+        "Calculando impacto de mitigação de CO₂ e ROI...",
+        "Estruturando parecer final e recomendações..."
+      ];
+      let stepIndex = 0;
+      setLoadingMessage(steps[0]); // Começa na primeira
+
+      interval = setInterval(() => {
+        stepIndex++;
+        if (stepIndex < steps.length) {
+          setLoadingMessage(steps[stepIndex]);
+        }
+      }, 15000); // Muda a cada 10 segundos (10000 ms)
+    }
+
+    // Limpa o intervalo quando o loading terminar
+    return () => clearInterval(interval);
+  }, [loading]);
+
   function getMaturityLabel(score100) {
     if (score100 >= 80) return "Alta aderência inicial";
     if (score100 >= 60) return "Boa aderência com ajustes";
@@ -73,6 +103,10 @@ function ProjectPage({
 
     if (areaTitle) {
       highlights.push(`Área: ${areaTitle}`);
+    }
+
+    if (data?.potencial_economia !== undefined) {
+      highlights.push(`Economia estimada: US$ ${data.potencial_economia} Milhões`);
     }
 
     if (data?.viabilidade_tecnica !== undefined) {
@@ -122,9 +156,10 @@ function ProjectPage({
     }
 
     return attentionPoints;
+    
   }
 
-  function adaptApiResponseToUi(apiResponse, areaTitle) {
+ function adaptApiResponseToUi(apiResponse, areaTitle) {
     const resumo = apiResponse?.resumo ?? {};
     const dados = apiResponse?.dados ?? {};
     const source = Object.keys(resumo).length > 0 ? resumo : dados;
@@ -150,6 +185,8 @@ function ProjectPage({
       highlights: buildHighlightsFromApi(source, areaTitle),
       attentionPoints: buildAttentionPointsFromApi(source),
       aiResponse: `${justificativa}\n\nComparação: ${comparacao}`,
+      // 👇 LINHA ADICIONADA AQUI:
+      resumo: source, 
       meta: {
         risco,
         custo,
@@ -164,7 +201,6 @@ function ProjectPage({
       raw: apiResponse,
     };
   }
-
   async function handleGenerateAnalysis() {
     if (!isValid || loading) return;
 
@@ -323,12 +359,19 @@ Descrição: ${projectDescription.trim()}`;
                 aqui e também entrará no ranking.
               </p>
             </div>
-          ) : loading ? (
+) : loading ? (
             <div className={styles.analysisPanel}>
               <div className={styles.sectionCard}>
                 <h3 className={styles.sectionTitle}>Analisando sua ideia</h3>
                 <div className={styles.responseBox}>
-                  A IA local está processando a descrição enviada...
+                 
+                  <strong style={{ color: "var(--primary-color, #4ade80)" }}>
+                    {loadingMessage}
+                  </strong>
+                  <br /><br />
+                  <small style={{ opacity: 0.7 }}>
+                    Por favor, aguarde. Processamento 100% local para segurança dos dados.
+                  </small>
                 </div>
               </div>
             </div>
