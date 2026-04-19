@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./ProjectPage.module.css";
 
-const API_URL =
-  import.meta.env.VITE_EVALUATE_API_URL || "http://127.0.0.1:8000/evaluate";
+const API_URL = import.meta.env.VITE_EVALUATE_API_URL || "http://127.0.0.1:8000/evaluate";
 
 function ProjectPage({
   selectedArea,
@@ -19,72 +18,41 @@ function ProjectPage({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [analysisData, setAnalysisData] = useState(null);
-
-  // 👇 1. ESTADO MOVIDO PARA O TOPO (Regra dos Hooks do React)
-  const [loadingMessage, setLoadingMessage] = useState("Iniciando motor LlamaCPP off-grid...");
+  const [loadingMessage, setLoadingMessage] = useState("Iniciando motor LlamaCPP...");
 
   const isTitleValid = projectTitle.trim().length >= 3;
   const isDescriptionValid = projectDescription.trim().length >= 20;
   const isValid = isTitleValid && isDescriptionValid;
 
-  useEffect(() => {
-    if (!isValid) {
-      setShowAnalysis(false);
-      setErrorMessage("");
-      setAnalysisData(null);
-    }
-  }, [isValid]);
-
-  useEffect(() => {
-    setErrorMessage("");
-    setAnalysisData(null);
-    setShowAnalysis(false);
-  }, [projectTitle, projectDescription, selectedArea?.id]);
-
-  const initialAnalysis = useMemo(() => {
-    if (!analysis) return null;
-    return analysis;
-  }, [analysis]);
-
-  useEffect(() => {
-    if (initialAnalysis && !analysisData) {
-      setAnalysisData(initialAnalysis);
-      setShowAnalysis(true);
-    }
-  }, [initialAnalysis, analysisData]);
-
-  // 👇 2. USE-EFFECT DO LOADER HACKER MANTIDO AQUI
+  // Loader com mensagens estratégicas para o Hackathon
   useEffect(() => {
     let interval;
     if (loading) {
       const steps = [
         "Iniciando motor LlamaCPP off-grid...",
         "Cruzando dados com o Plano Estratégico da Petrobras...",
-        "Analisando relatórios do MCTI e EPE...",
-        "Avaliando viabilidade técnica e riscos operacionais...",
-        "Calculando impacto de mitigação de CO₂ e ROI...",
-        "Estruturando parecer final e recomendações..."
+        "Analisando metas Net Zero 2050...",
+        "Avaliando viabilidade financeira (CAPEX/OPEX)...",
+        "Calculando impacto de mitigação de CO₂...",
+        "Estruturando parecer técnico final..."
       ];
       let stepIndex = 0;
-      setLoadingMessage(steps[0]); // Começa na primeira
-
+      setLoadingMessage(steps[0]);
       interval = setInterval(() => {
         stepIndex++;
-        if (stepIndex < steps.length) {
-          setLoadingMessage(steps[stepIndex]);
-        }
-      }, 15000); // Muda a cada 10 segundos (10000 ms)
+        if (stepIndex < steps.length) setLoadingMessage(steps[stepIndex]);
+      }, 15000);
     }
-
-    // Limpa o intervalo quando o loading terminar
     return () => clearInterval(interval);
   }, [loading]);
 
+  // --- FUNÇÕES DE TRATAMENTO DE DADOS (DADOS IMPORTADOS E MANTIDOS) ---
+
   function getMaturityLabel(score100) {
-    if (score100 >= 80) return "Alta aderência inicial";
-    if (score100 >= 60) return "Boa aderência com ajustes";
-    if (score100 >= 40) return "Potencial moderado";
-    return "Ideia ainda precisa amadurecer";
+    if (score100 >= 80) return "ALTA ADERÊNCIA • Aprovado para Portfólio";
+    if (score100 >= 60) return "BOA ADERÊNCIA • Em Análise Técnica";
+    if (score100 >= 40) return "POTENCIAL MODERADO • Requer Revisão";
+    return "REPROVADA • Inviabilidade Técnica ou Lógica"; // Rigor para ideias absurdas
   }
 
   function normalizeText(value, fallback = "Não informado") {
@@ -100,154 +68,74 @@ function ProjectPage({
 
   function buildHighlightsFromApi(data, areaTitle) {
     const highlights = [];
-
-    if (areaTitle) {
-      highlights.push(`Área: ${areaTitle}`);
-    }
-
-    if (data?.potencial_economia !== undefined) {
-      highlights.push(`Economia estimada: US$ ${data.potencial_economia} Milhões`);
-    }
-
-    if (data?.viabilidade_tecnica !== undefined) {
-      highlights.push(`Viabilidade técnica: ${data.viabilidade_tecnica}/10`);
-    }
-
-    if (data?.impacto_co2 !== undefined) {
-      highlights.push(`Impacto em CO₂: ${data.impacto_co2}/10`);
-    }
-
-    if (data?.custo) {
-      highlights.push(`Custo: ${capitalize(data.custo)}`);
-    }
-
-    if (data?.risco) {
-      highlights.push(`Risco: ${capitalize(data.risco)}`);
-    }
-
-    return highlights.length > 0
-      ? highlights
-      : ["Ideia recebida pela IA", "Análise inicial concluída"];
+    if (areaTitle) highlights.push(`Área: ${areaTitle}`);
+    if (data?.potencial_economia) highlights.push(`Economia: US$ ${data.potencial_economia}M`);
+    if (data?.viabilidade_tecnica) highlights.push(`Viabilidade: ${data.viabilidade_tecnica}/10`);
+    if (data?.impacto_co2) highlights.push(`Impacto CO₂: ${data.impacto_co2}/10`);
+    return highlights.length > 0 ? highlights : ["Análise inicial concluída"];
   }
 
   function buildAttentionPointsFromApi(data) {
-    const attentionPoints = [];
-
-    if (data?.tempo_implementacao) {
-      attentionPoints.push(
-        `Tempo de implementação: ${capitalize(data.tempo_implementacao)}`
-      );
-    }
-
-    if (data?.custo) {
-      attentionPoints.push(
-        `Avaliar orçamento e viabilidade financeira: ${capitalize(data.custo)}`
-      );
-    }
-
-    if (data?.risco) {
-      attentionPoints.push(
-        `Monitorar risco de execução: ${capitalize(data.risco)}`
-      );
-    }
-
-    if (attentionPoints.length === 0) {
-      attentionPoints.push("Detalhar melhor escopo, custo e implementação.");
-    }
-
-    return attentionPoints;
-    
+    const points = [];
+    if (data?.risco) points.push(`Risco Detectado: ${capitalize(data.risco)}`);
+    if (data?.custo) points.push(`Complexidade Financeira: ${capitalize(data.custo)}`);
+    if (data?.tempo_implementacao) points.push(`Prazo Estimado: ${capitalize(data.tempo_implementacao)}`);
+    return points.length > 0 ? points : ["Detalhamento de riscos pendente"];
   }
 
- function adaptApiResponseToUi(apiResponse, areaTitle) {
-    const resumo = apiResponse?.resumo ?? {};
-    const dados = apiResponse?.dados ?? {};
-    const source = Object.keys(resumo).length > 0 ? resumo : dados;
-
+  function adaptApiResponseToUi(apiResponse, areaTitle) {
+    const source = apiResponse?.resumo ?? apiResponse?.dados ?? apiResponse ?? {};
     const rawScore = Number(apiResponse?.score_final ?? source?.score_final ?? 0);
-    const score100 = Number.isFinite(rawScore) ? Math.round(rawScore * 10) : 0;
-
-    const justificativa = normalizeText(
-      source?.justificativa,
-      "Sem justificativa retornada."
-    );
-    const comparacao = normalizeText(
-      source?.comparacao,
-      "Sem comparação retornada."
-    );
-    const risco = capitalize(source?.risco, "não informado");
-    const custo = capitalize(source?.custo, "não informado");
-    const tempo = capitalize(source?.tempo_implementacao, "não informado");
+    const score100 = Math.round(rawScore * 10);
 
     return {
       score: score100,
-      maturity: `${getMaturityLabel(score100)} • Risco ${risco}`,
+      maturity: getMaturityLabel(score100),
       highlights: buildHighlightsFromApi(source, areaTitle),
       attentionPoints: buildAttentionPointsFromApi(source),
-      aiResponse: `${justificativa}\n\nComparação: ${comparacao}`,
-      // 👇 LINHA ADICIONADA AQUI:
-      resumo: source, 
-      meta: {
-        risco,
-        custo,
-        tempo,
-        viabilidadeTecnica:
-          source?.viabilidade_tecnica !== undefined
-            ? Number(source.viabilidade_tecnica)
-            : null,
-        impactoCo2:
-          source?.impacto_co2 !== undefined ? Number(source.impacto_co2) : null,
-      },
-      raw: apiResponse,
+      aiResponse: normalizeText(source?.justificativa),
+      // Novos dados para resposta completa
+      netZero: normalizeText(source?.impacto_net_zero, "Análise de impacto climático em processamento."),
+      financeiro: normalizeText(source?.viabilidade_financeira, "Análise de viabilidade econômica e ROI em processamento."),
+      aplicacao: normalizeText(source?.plano_aplicacao, "Plano estratégico de implementação em processamento."),
+      meta: source
     };
   }
+
+  // --- HANDLERS ---
+
   async function handleGenerateAnalysis() {
     if (!isValid || loading) return;
-
     try {
       setLoading(true);
       setErrorMessage("");
       setShowAnalysis(true);
 
-      const ideiaPayload = `Título da ideia: ${projectTitle.trim()}
-Área: ${selectedArea?.title || "Não informada"}
-Descrição: ${projectDescription.trim()}`;
+      const payload = {
+        ideia: `Aja como um Consultor Técnico da Petrobras. Analise rigorosamente:
+        TÍTULO: ${projectTitle}
+        ÁREA: ${selectedArea?.title}
+        DESCRIÇÃO: ${projectDescription}
+        
+        Sua resposta deve ser detalhada e incluir obrigatoriamente:
+        1. justificativa (Técnica e profunda)
+        2. impacto_net_zero (Alinhamento com 2050)
+        3. viabilidade_financeira (CAPEX/OPEX e Sistema Financeiro)
+        4. plano_aplicacao (Passo a passo)
+        Se a ideia for impossível (ex: algas fora d'água), dê nota final zero.`
+      };
 
       const response = await fetch(API_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ideia: ideiaPayload,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        let message = "Erro ao gerar análise.";
-        try {
-          const errorData = await response.json();
-          if (errorData?.detail) {
-            message = String(errorData.detail);
-          }
-        } catch {
-          // ignora erro ao ler body de erro
-        }
-        throw new Error(message);
-      }
-
+      if (!response.ok) throw new Error("Erro na comunicação com a IA.");
       const data = await response.json();
-      const adapted = adaptApiResponseToUi(data, selectedArea?.title);
-      setAnalysisData(adapted);
-      onAnalysisReady?.(adapted);
+      setAnalysisData(adaptApiResponseToUi(data, selectedArea?.title));
     } catch (error) {
-      console.error("Erro ao avaliar ideia:", error);
-      setAnalysisData(null);
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Não foi possível gerar a análise."
-      );
+      setErrorMessage(error.message);
     } finally {
       setLoading(false);
     }
@@ -256,168 +144,78 @@ Descrição: ${projectDescription.trim()}`;
   return (
     <section className={styles.page}>
       <div className={styles.shell}>
+        {/* Coluna de Input */}
         <div className={styles.leftColumn}>
-          <span className={styles.badge}>Etapa 3</span>
-
-          <h2 className={styles.title}>Descreva a sua ideia</h2>
-
-          <p className={styles.subtitle}>
-            Agora você pode dar um nome para a ideia, salvar o histórico e
-            montar um ranking automático com os melhores scores.
-          </p>
-
-          <div className={styles.areaBox}>
-            <span className={styles.areaLabel}>Área selecionada</span>
-            <strong>{selectedArea?.title || "Não informada"}</strong>
-          </div>
-
+          <h2 className={styles.title}>Descreva sua Ideia</h2>
           <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel} htmlFor="projectTitle">
-              Nome da ideia
-            </label>
-            <input
-              id="projectTitle"
-              type="text"
-              className={styles.textInput}
-              placeholder="Ex.: Redução de emissões em operações offshore"
-              value={projectTitle}
-              onChange={(event) => onChangeTitle(event.target.value)}
-            />
+            <label className={styles.fieldLabel}>Nome do Projeto</label>
+            <input className={styles.textInput} value={projectTitle} onChange={(e) => onChangeTitle(e.target.value)} />
           </div>
-
           <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel} htmlFor="projectDescription">
-              Descrição da ideia
-            </label>
-            <textarea
-              id="projectDescription"
-              className={styles.textarea}
-              placeholder="Exemplo: queremos reduzir atrasos operacionais, melhorar previsibilidade, medir impacto financeiro e criar uma solução integrada com dados da operação..."
-              value={projectDescription}
-              onChange={(event) => onChangeDescription(event.target.value)}
-            />
+            <label className={styles.fieldLabel}>Descrição Técnica</label>
+            <textarea className={styles.textarea} value={projectDescription} onChange={(e) => onChangeDescription(e.target.value)} />
           </div>
-
-          <div className={styles.helperRow}>
-            <span>Título mínimo: 3 caracteres</span>
-            <span>Descrição mínima: 20 caracteres</span>
-          </div>
-
-          <div className={styles.counterRow}>
-            <span>{projectTitle.trim().length} caracteres no título</span>
-            <span>{projectDescription.trim().length} caracteres na descrição</span>
-          </div>
-
           <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={onBack}
-              disabled={loading}
-            >
-              Voltar
-            </button>
-
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={handleGenerateAnalysis}
-              disabled={!isValid || loading}
-            >
-              {loading ? "Gerando análise..." : "Gerar leitura inicial"}
-            </button>
-
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={onRestart}
-              disabled={loading}
-            >
-              Reiniciar
+            <button className={styles.secondaryButton} onClick={onBack}>Voltar</button>
+            <button className={styles.primaryButton} onClick={handleGenerateAnalysis} disabled={!isValid || loading}>
+              {loading ? "Processando..." : "Gerar Parecer Completo"}
             </button>
           </div>
-
-          {errorMessage ? (
-            <p className={styles.integrationHint} role="alert">
-              {errorMessage}
-            </p>
-          ) : (
-            <p className={styles.integrationHint}>
-              A análise salva automaticamente a ideia na barra lateral.
-            </p>
-          )}
         </div>
 
+        {/* Coluna de Resultados */}
         <div className={styles.rightColumn}>
           {!showAnalysis ? (
             <div className={styles.emptyState}>
-              <span className={styles.emptyStateBadge}>Painel da etapa 3</span>
-              <h3>Score, pontos da ideia e resposta da IA</h3>
-              <p>
-                Dê um nome à ideia, escreva a descrição e clique em{" "}
-                <strong>Gerar leitura inicial</strong>. O resultado aparecerá
-                aqui e também entrará no ranking.
-              </p>
+              <h3>Painel de Análise Estratégica</h3>
+              <p>Aguardando submissão para cruzamento de dados.</p>
             </div>
-) : loading ? (
+          ) : loading ? (
             <div className={styles.analysisPanel}>
               <div className={styles.sectionCard}>
-                <h3 className={styles.sectionTitle}>Analisando sua ideia</h3>
+                <h3 className={styles.sectionTitle}>Processamento Local Ativo</h3>
                 <div className={styles.responseBox}>
-                 
-                  <strong style={{ color: "var(--primary-color, #4ade80)" }}>
-                    {loadingMessage}
-                  </strong>
-                  <br /><br />
-                  <small style={{ opacity: 0.7 }}>
-                    Por favor, aguarde. Processamento 100% local para segurança dos dados.
-                  </small>
+                  <strong style={{ color: "#4ade80" }}>{loadingMessage}</strong>
                 </div>
               </div>
             </div>
           ) : analysisData ? (
             <div className={styles.analysisPanel}>
               <div className={styles.scoreCard}>
-                <span className={styles.scoreLabel}>Score da ideia</span>
-                <strong className={styles.scoreValue}>
-                  {analysisData.score}
-                  <small>/100</small>
-                </strong>
+                <span className={styles.scoreLabel}>Score de Viabilidade</span>
+                <strong className={styles.scoreValue}>{analysisData.score}/100</strong>
                 <p className={styles.scoreMeta}>{analysisData.maturity}</p>
               </div>
 
+              {/* Seção Principal de Resposta */}
               <div className={styles.sectionCard}>
-                <h3 className={styles.sectionTitle}>Pontos principais</h3>
-                <div className={styles.pillList}>
-                  {analysisData.highlights.map((item) => (
-                    <span key={item} className={styles.pill}>
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className={styles.sectionCard}>
-                <h3 className={styles.sectionTitle}>Pontos de atenção</h3>
-                <ul className={styles.pointList}>
-                  {analysisData.attentionPoints.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className={styles.sectionCard}>
-                <h3 className={styles.sectionTitle}>Resposta da IA</h3>
+                <h3 className={styles.sectionTitle}>Parecer Técnico Detalhado</h3>
                 <div className={styles.responseBox}>{analysisData.aiResponse}</div>
               </div>
+
+              {/* NOVO: Alinhamento Net Zero */}
+              <div className={styles.sectionCard} style={{ borderLeft: "4px solid #4ade80" }}>
+                <h3 className={styles.sectionTitle}>🌍 Impacto Net Zero 2050</h3>
+                <div className={styles.responseBox}>{analysisData.netZero}</div>
+              </div>
+
+              {/* NOVO: Viabilidade Financeira */}
+              <div className={styles.sectionCard} style={{ borderLeft: "4px solid #3b82f6" }}>
+                <h3 className={styles.sectionTitle}>💰 Sistema Financeiro & Viabilidade</h3>
+                <div className={styles.responseBox}>{analysisData.financeiro}</div>
+              </div>
+
+              {/* NOVO: Plano de Aplicação */}
+              <div className={styles.sectionCard}>
+                <h3 className={styles.sectionTitle}>🚀 Plano de Aplicação</h3>
+                <div className={styles.responseBox}>{analysisData.aplicacao}</div>
+              </div>
+
+              <button className={styles.printButton} onClick={() => window.print()}>
+                Exportar Relatório PDF
+              </button>
             </div>
-          ) : (
-            <div className={styles.emptyState}>
-              <span className={styles.emptyStateBadge}>Painel da etapa 3</span>
-              <h3>Não foi possível montar a análise</h3>
-              <p>Tente novamente após ajustar o texto da ideia.</p>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </section>
